@@ -4,10 +4,15 @@ const ContactMessage = require('../models/ContactMessage');
 // ── Nodemailer transporter ──────────────────────────────────────────────────
 const createTransporter = () =>
   nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true for port 465 (SSL), false for 587 (STARTTLS)
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false, // needed on some cloud providers
     },
   });
 
@@ -58,9 +63,9 @@ exports.submitMessage = async (req, res) => {
 
     res.status(201).json({ message: 'Message sent successfully.', id: doc._id });
   } catch (error) {
-    console.error('Error in submitMessage:', error);
-    // Still respond OK to user if the email just failed (DB save worked)
-    res.status(500).json({ message: 'Server error. Please try again later.' });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Error in submitMessage:', errMsg);
+    res.status(500).json({ message: 'Server error. Please try again later.', error: errMsg });
   }
 };
 
