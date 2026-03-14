@@ -6,14 +6,17 @@ const createTransporter = () =>
   nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // true for port 465 (SSL), false for 587 (STARTTLS)
+    secure: false, 
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
     tls: {
-      rejectUnauthorized: false, // needed on some cloud providers
+      rejectUnauthorized: false,
     },
+    connectionTimeout: 10000, // 10 seconds timeout
+    greetingTimeout: 5000,
+    socketTimeout: 15000,
   });
 
 // ── POST /api/contact  (public) ─────────────────────────────────────────────
@@ -114,8 +117,9 @@ exports.replyMessage = async (req, res) => {
 
     res.status(200).json({ message: 'Reply sent successfully.', doc });
   } catch (error) {
-    console.error('Error replying to message:', error);
-    res.status(500).json({ message: 'Server error' });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Error replying to message:', errMsg);
+    res.status(500).json({ message: 'Server error. Could not send reply.', error: errMsg });
   }
 };
 
